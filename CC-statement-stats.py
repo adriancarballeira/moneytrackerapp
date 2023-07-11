@@ -1,38 +1,45 @@
 import sys
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import desc, abs 
-
+from pyspark.sql.functions import desc, abs, col, round, expr 
 
 if __name__ == "__main__":
     """
-        Usage: helloworld
+        Usage:  Reads in .csv of transactions downloaded from Barclays (credit card purchases).
+                Analyzes how many dollars are spent where.
+                Returns summary to user.
+
+                To execute:
+./bin/spark-submit \
+../Git/moneytrackerapp/CC-statement-stats.py
+
     """
+
     spark = SparkSession\
         .builder\
-        .appName("helloworld")\
+        .appName("Barclays")\
         .getOrCreate()
 
     ccStatement = spark\
         .read\
         .option("inferSchema", "true")\
         .option("header", "true")\
-        .csv("./data/Barclays/CreditCard_20230417_20230710.csv")
+        .csv("./data/Barclays/CreditCard_20230101_20230711.csv")
 
     ccStatement.createOrReplaceTempView("ccStatement")
 
     ccStCount = ccStatement.count()
-    #ccStatement.printSchema()
 
     ccTotals = ccStatement\
-        .withColumn("amount", abs(ccStatement.Amount))\
         .groupBy("Description")\
         .sum("amount")\
         .withColumnRenamed("sum(amount)", "amount_total")\
-        .sort(desc("amount_total"))
+        .orderBy("amount_total")
+
+    ccTotals = ccTotals\
+        .withColumn("amount_total", round(ccTotals.amount_total, 2))
 
     ccTotals.show()
 
     print("CC statement transaction count: %f" % ccStCount)
-    #print(ccTotals)
 
     spark.stop()
