@@ -1,4 +1,6 @@
-chase_prime_schema = StructType([
+from pyspark.sql.types import StructField, StructType, StringType
+
+CHASE_PRIME_SCHEMA = StructType([
   StructField("TRANSACTION_DATE", StringType(), False),
   StructField("POST_DATE", StringType(), False),
   StructField("DESCRIPTION", StringType(), False),
@@ -8,7 +10,7 @@ chase_prime_schema = StructType([
   StructField("MEMO", StringType(), True)
 ])
 
-barclays_schema = StructType([
+BARCLAYS_SCHEMA = StructType([
   StructField("TRANSACTION_DATE", StringType(), False),
   StructField("DESCRIPTION", StringType(), False),
   StructField("CATEGORY", StringType(), False),
