@@ -11,12 +11,19 @@ def load(type: str, df: DataFrame, target: str):
             -For MySQL - table name
     """
 
-    # Write data on mysql database with table name
+    driver_name = "org.sqlite.JDBC"
+    url = "jdbc:sqlite:/Users/Carballeira/sqlite/db/cctx.db"
+
     if type == "JDBC":
-        df.write.format("JDBC").mode("overwrite").options(url='jdbc:mysql://localhost/world', \
-                                                          dbtable=target, driver='com.mysql.cj.jdbc.Driver',
-                                                          user='root', password='root').save()
-        print(f"Data successfully loaded to MySQL Database !!")
+
+        df.write.format("jdbc")\
+            .mode("append")\
+            .option("url", url)\
+            .option("dbtable", target)\
+            .option("driver",driver_name)\
+            .save()
+
+        print(f"Data successfully loaded to SQLite Database !!")
 
     if type == "CSV":
         # Write data on filesystem

@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 from extract import extract
 from metadata.constant import CHASE_PRIME_SCHEMA, BARCLAYS_SCHEMA
 #from transform import rename_cols, join_df, specific_cols
-#from load import load
+from load import load
 
 """
 ./bin/spark-submit ../Git/moneytrackerapp/src/job.py
@@ -41,7 +41,7 @@ print("barclays_df count: %f" % y)
 # #### Load Data ####
 
 # # MySQL 
-# load("JDBC", country_city_language_df, "CountryCityLanguage")
+load("JDBC", barclays_df, "barclays")
 
 # # FileSystem
 # load("CSV", country_city_language_df, "output/countrycitylanguage.csv")
