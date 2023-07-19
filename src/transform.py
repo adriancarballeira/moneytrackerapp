@@ -1,38 +1,30 @@
 from pyspark.sql import DataFrame
+import pyspark.sql.functions as f
 
 
-def rename_cols(df: DataFrame, mapping_dict: dict) -> DataFrame:
+def union_dfs(chaseprime_df: DataFrame,  barclays_df: DataFrame) -> DataFrame:
+    # Union the two DFs
+    df = chaseprime_df.unionByName(barclays_df, allowMissingColumns=True)
+    return df 
+
+def monthly_totals(chaseprime_df: DataFrame,  barclays_df: DataFrame) -> DataFrame:
     """
-    # Rename all the columns
-    :param df: input dataframe
-    :param mapping_dict: Key value pair of column names (old:new)
-    :return: output Dataframe
+    take both data frames and combine into 1 
+    Then for each 
     """
-    for key in mapping_dict.keys():
-        df = df.withColumnRenamed(key, mapping_dict.get(key))
+    df = union_dfs(chaseprime_df, barclays_df)
 
-    return df
+    ccTotals = df\
+        .withColumn("TRANSACTION_DATE", f.to_date("TRANSACTION_DATE", "MM/dd/yyyy"))\
+        .withColumn("TRANSACTION_MONTH", f.trunc("TRANSACTION_DATE", "month"))\
+        .withColumn("AMOUNT", f.col("AMOUNT").cast('double'))\
+        .filter(~f.lower(f.col("DESCRIPTION")).like("%payment%"))\
+        .groupBy("TRANSACTION_MONTH")\
+        .sum("AMOUNT")\
+        .withColumnRenamed("sum(AMOUNT)", "amount_total")\
+        .orderBy("TRANSACTION_MONTH")
 
+    ccTotals = ccTotals\
+        .withColumn("amount_total", f.round(ccTotals.amount_total, 2))
 
-def specific_cols(df: DataFrame, specific_cols: list):
-    """
-    Return only required columns
-    :param df: input Dataframe
-    :param specific_cols:
-    :return: Dataframe
-    """
-    return df.select(specific_cols)
-
-
-def join_df(left_df: DataFrame, right_df: DataFrame, ON_COLUMNS: list, JOIN_TYPE: str) -> DataFrame:
-    """
-    Return Join dataframe
-    :param left_df: left Dataframe
-    :param right_df: right Dataframe
-    :param ON_COLUMNS: Join Column
-    :param JOIN_TYPE: Join Type
-    :return: FInal Dataframe
-    """
-    output_df = left_df.alias("left_df").join(right_df.alias("right_df"), ON_COLUMNS, JOIN_TYPE)
-
-    return output_df
+    return ccTotals
